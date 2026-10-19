@@ -1,0 +1,114 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Exam Schedule</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="topbar">
+    <h2>Exam Schedule</h2>
+    <a href="dashboard.html">Back to Dashboard</a>
+</header>
+
+<main class="page-container">
+    <h1>Manage Exam Schedule</h1>
+    <p>Add and view your upcoming examinations.</p>
+
+    <form id="examForm">
+        <label for="subject">Subject Name</label>
+        <input type="text" id="subject"
+               placeholder="e.g. Java Programming" required>
+
+        <label for="examType">Exam Type</label>
+        <select id="examType" required>
+            <option value="">Select Exam Type</option>
+            <option value="Internal Test 1">Internal Test 1</option>
+            <option value="Internal Test 2">Internal Test 2</option>
+            <option value="Model Exam">Model Exam</option>
+            <option value="Semester Exam">Semester Exam</option>
+            <option value="Practical Exam">Practical Exam</option>
+        </select>
+
+        <label for="examDate">Exam Date</label>
+        <input type="date" id="examDate" required>
+
+        <button type="submit">Add Exam</button>
+        <p id="message"></p>
+    </form>
+
+    <h2>Upcoming Exams</h2>
+    <div id="examList" class="data-list"></div>
+</main>
+
+<script src="script.js"></script>
+<script>
+    const examForm = document.getElementById("examForm");
+
+    async function loadExams() {
+        const list = document.getElementById("examList");
+
+        try {
+            const response = await fetch("/api/exams");
+
+            if (!response.ok) {
+                throw new Error("Unable to load exams");
+            }
+
+            const exams = await response.json();
+
+            exams.sort((a, b) =>
+                a.examDate.localeCompare(b.examDate)
+            );
+
+            list.replaceChildren();
+
+            if (exams.length === 0) {
+                list.textContent = "No exams added yet.";
+                return;
+            }
+
+            exams.forEach(exam => {
+                const item = document.createElement("div");
+                item.className = "data-item";
+                item.textContent =
+                    `${exam.subject} | ${exam.examType} | Date: ${exam.examDate}`;
+                list.appendChild(item);
+            });
+
+        } catch (error) {
+            list.textContent =
+                "Could not load exams. Please check the server.";
+        }
+    }
+
+    examForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const exam = {
+            subject: document.getElementById("subject").value.trim(),
+            examType: document.getElementById("examType").value,
+            examDate: document.getElementById("examDate").value
+        };
+
+        try {
+            await submitRecord("exams", exam);
+
+            showMessage("Exam added successfully!", false);
+            examForm.reset();
+
+            await loadExams();
+
+        } catch (error) {
+            showMessage(error.message);
+        }
+    });
+
+    loadExams();
+</script>
+
+</body>
+</html>
