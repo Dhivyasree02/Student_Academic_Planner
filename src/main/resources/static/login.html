@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Login</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #f4f6f9;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .login-box {
+            width: 90%;
+            max-width: 420px;
+            padding: 30px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 18px rgba(0,0,0,0.12);
+            text-align: center;
+        }
+
+        h1 {
+            margin-bottom: 25px;
+            color: #222;
+        }
+
+        input {
+            width: 100%;
+            padding: 12px;
+            margin-bottom: 15px;
+            border: 1px solid #ccc;
+            border-radius: 6px;
+            font-size: 15px;
+        }
+
+        button {
+            padding: 12px 25px;
+            background: #2448c5;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #message {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        a {
+            color: #2448c5;
+        }
+    </style>
+</head>
+
+<body>
+
+<div class="login-box">
+    <h1>Student Login</h1>
+
+    <form id="loginForm">
+        <input
+                type="email"
+                id="email"
+                placeholder="Enter your email"
+                required
+        >
+
+        <input
+                type="password"
+                id="password"
+                placeholder="Enter your password"
+                required
+        >
+
+        <button type="submit" id="loginButton">
+            Login
+        </button>
+    </form>
+
+    <p id="message" role="status"></p>
+
+    <p>New student?</p>
+    <a href="/register.html">Register here</a>
+</div>
+
+<script>
+    const form = document.getElementById("loginForm");
+    const message = document.getElementById("message");
+    const button = document.getElementById("loginButton");
+
+    form.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const email = document.getElementById("email").value.trim();
+        const password = document.getElementById("password").value;
+
+        message.textContent = "";
+        button.disabled = true;
+        button.textContent = "Logging in...";
+
+        try {
+            const response = await fetch("/api/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    email: email,
+                    password: password
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok && (data.success === true || data.message === "Login successful")) {
+                message.style.color = "green";
+                message.textContent = "Login successful!";
+
+                window.location.href = "/dashboard.html";
+            } else {
+                message.style.color = "red";
+                message.textContent =
+                    data.message || "Invalid email or password.";
+            }
+
+        } catch (error) {
+            message.style.color = "red";
+            message.textContent =
+                "Unable to connect to the server. Please try again.";
+            console.error("Login error:", error);
+        } finally {
+            button.disabled = false;
+            button.textContent = "Login";
+        }
+    });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assignments</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="topbar">
+    <h2>Assignments</h2>
+    <a href="dashboard.html">Back to Dashboard</a>
+</header>
+
+<main class="page-container">
+    <h1>Manage Assignments</h1>
+    <p>Track your assignments and their due dates.</p>
+
+    <form id="assignmentForm">
+        <label for="title">Assignment Title</label>
+        <input type="text" id="title" placeholder="e.g. Java OOP Assignment" required>
+
+        <label for="subject">Subject</label>
+        <input type="text" id="subject" placeholder="e.g. Java Programming" required>
+
+        <label for="dueDate">Due Date</label>
+        <input type="date" id="dueDate" required>
+
+        <button type="submit">Add Assignment</button>
+        <p id="message"></p>
+    </form>
+
+    <h2>Your Assignments</h2>
+    <div id="assignmentList" class="data-list"></div>
+</main>
+
+<script src="script.js"></script>
+<script>
+    const assignmentForm = document.getElementById("assignmentForm");
+
+    function displayAssignment(record) {
+        const status = record.completed ? "Completed" : "Pending";
+        return `${record.title} | ${record.subject} | Due: ${record.dueDate} | ${status}`;
+    }
+
+    async function refreshAssignments() {
+        const list = document.getElementById("assignmentList");
+
+        try {
+            const response = await fetch("/api/assignments");
+
+            if (!response.ok) {
+                throw new Error("Could not load assignments");
+            }
+
+            const records = await response.json();
+            list.replaceChildren();
+
+            if (records.length === 0) {
+                list.textContent = "No assignments added yet.";
+                return;
+            }
+
+            records.forEach(record => {
+                const item = document.createElement("div");
+                item.className = "data-item";
+
+                const details = document.createElement("p");
+                details.textContent = displayAssignment(record);
+                item.appendChild(details);
+
+                if (!record.completed) {
+                    const button = document.createElement("button");
+                    button.textContent = "Mark Completed";
+
+                    button.addEventListener("click", async () => {
+                        try {
+                            const result = await fetch(
+                                `/api/assignments/${record.id}/complete`,
+                                { method: "PUT" }
+                            );
+
+                            if (!result.ok) {
+                                throw new Error("Unable to update assignment");
+                            }
+
+                            await refreshAssignments();
+                        } catch (error) {
+                            showMessage(error.message);
+                        }
+                    });
+
+                    item.appendChild(button);
+                }
+
+                list.appendChild(item);
+            });
+        } catch (error) {
+            list.textContent = "Could not load assignments. Check the server.";
+        }
+    }
+
+    assignmentForm.addEventListener("submit", async function(event) {
+        event.preventDefault();
+
+        const task = {
+            title: document.getElementById("title").value.trim(),
+            subject: document.getElementById("subject").value.trim(),
+            dueDate: document.getElementById("dueDate").value,
+            completed: false
+        };
+
+        try {
+            await submitRecord("assignments", task);
+            showMessage("Assignment added successfully!", false);
+            assignmentForm.reset();
+            await refreshAssignments();
+        } catch (error) {
+            showMessage(error.message);
+        }
+    });
+
+    refreshAssignments();
+</script>
+</body>
+</html>
